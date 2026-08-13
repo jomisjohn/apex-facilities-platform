@@ -119,6 +119,7 @@ services:
     restart: unless-stopped
     environment:
       APEX_WEB_DOMAIN: ${APEX_WEB_DOMAIN:?Set APEX_WEB_DOMAIN in .env.production}
+      APEX_DB_DOMAIN: ${APEX_DB_DOMAIN:-db.invalid}
     ports:
       - "80:80"
       - "443:443"
@@ -127,6 +128,7 @@ services:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - acme_webroot:/srv/acme:ro
     depends_on:
       app:
         condition: service_healthy
@@ -152,3 +154,4 @@ volumes:
   apex_postgres_data:
   caddy_data:
   caddy_config:
+  acme_webroot:

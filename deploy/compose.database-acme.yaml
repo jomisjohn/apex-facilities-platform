@@ -1,0 +1,28 @@
+services:
+  database-certbot:
+    image: certbot/certbot:v5.7.0
+    profiles: ["database-acme"]
+    restart: "no"
+    environment:
+      APEX_DB_DOMAIN: ${APEX_DB_DOMAIN:?Set APEX_DB_DOMAIN in .env.production}
+      APEX_ACME_EMAIL: ${APEX_ACME_EMAIL:?Set APEX_ACME_EMAIL in .env.production}
+    volumes:
+      - acme_webroot:/var/www/acme
+      - certbot_config:/etc/letsencrypt
+      - certbot_work:/var/lib/letsencrypt
+      - certbot_logs:/var/log/letsencrypt
+      - ${APEX_DB_TLS_SOURCE_DIR:?Set APEX_DB_TLS_SOURCE_DIR in .env.production}:/certificate-export
+      - ./database/certbot-db.sh:/usr/local/bin/certbot-db:ro
+      - ./database/certbot-export-db:/usr/local/bin/certbot-export-db:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/certbot-db"]
+    networks: [web]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    tmpfs: ["/tmp:size=32m,mode=1777"]
+    mem_limit: 256m
+    cpus: 0.5
+
+volumes:
+  certbot_config:
+  certbot_work:
+  certbot_logs:

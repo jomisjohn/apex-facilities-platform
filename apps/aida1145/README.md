@@ -12,6 +12,8 @@ This local Streamlit app helps you explore approved synthetic Apex data and buil
 6. Run `streamlit run streamlit_app.py`.
 7. Open **Connection & workspace** first and confirm that every check passes.
 
+For the complete local workflow, including DBeaver, page registration and Git, read [Build the AIDA 1145 app locally](LOCAL-DEVELOPMENT.md).
+
 The app runs on your computer. It uses one supported Streamlit SQL connection backed by SQLAlchemy; it does not cache a raw PostgreSQL connection.
 
 ## Safe use
@@ -24,3 +26,4 @@ The app runs on your computer. It uses one supported Streamlit SQL connection ba
 
 If the connection is unavailable, use the CSV or Parquet fallback provided with the relevant lab.
 
+The hosted preview is a reference deployment. Build and test your lab features in your local copy of this AIDA 1145 shell.

@@ -11,3 +11,12 @@
 	}
 	reverse_proxy app:8501
 }
+
+# ACME HTTP-01 webroot for the separately managed PostgreSQL certificate.
+http://{$APEX_DB_DOMAIN:db.invalid} {
+	handle /.well-known/acme-challenge/* {
+		root * /srv/acme
+		file_server
+	}
+	respond 404
+}

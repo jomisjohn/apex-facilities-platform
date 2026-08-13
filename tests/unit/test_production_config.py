@@ -110,6 +110,6 @@ def test_production_examples_contain_placeholders_not_real_infrastructure(repo_r
     example = (repo_root / ".env.production.example").read_text("utf-8")
     assert "replace-with-" in example
     assert "example.edu" in example
-    assert "127.0.0.1" not in example
+    assert "APEX_DB_BIND_ADDRESS=127.0.0.1" in example
     assert "APEX_DB_ADMIN_PASSWORD=" in example
     assert "APEX_PREVIEW_PASSWORD=" in example

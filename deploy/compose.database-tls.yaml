@@ -1,0 +1,86 @@
+# Optional overlay for native PostgreSQL TLS. It has no effect unless explicitly
+# supplied alongside compose.production.yaml. The default host bind is loopback.
+services:
+  tls-prepare:
+    image: postgis/postgis:17-3.5
+    restart: "no"
+    environment:
+      APEX_DB_DOMAIN: ${APEX_DB_DOMAIN:?Set APEX_DB_DOMAIN in .env.production}
+      APEX_DB_TLS_MIN_VALIDITY_SECONDS: ${APEX_DB_TLS_MIN_VALIDITY_SECONDS:-604800}
+    volumes:
+      - ${APEX_DB_TLS_SOURCE_DIR:?Set APEX_DB_TLS_SOURCE_DIR in .env.production}:/certificate-source:ro
+      - postgres_tls:/postgres-tls
+      - ./database/prepare-tls.sh:/usr/local/bin/prepare-tls:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/prepare-tls"]
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    mem_limit: 128m
+    cpus: 0.25
+
+  database:
+    depends_on:
+      tls-prepare:
+        condition: service_completed_successfully
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/etc/postgresql/tls/server.crt
+      - -c
+      - ssl_key_file=/etc/postgresql/tls/server.key
+      - -c
+      - ssl_min_protocol_version=TLSv1.2
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.remote.conf
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - max_connections=100
+      - -c
+      - reserved_connections=5
+      - -c
+      - superuser_reserved_connections=3
+      - -c
+      - listen_addresses=*
+    ports:
+      - ${APEX_DB_BIND_ADDRESS:-127.0.0.1}:${APEX_DB_TLS_PORT:-5432}:5432
+    volumes:
+      - postgres_tls:/etc/postgresql/tls:ro
+      - postgres_socket:/var/run/postgresql
+      - ./database/pg_hba.remote.conf:/etc/postgresql/pg_hba.remote.conf:ro
+    networks:
+      data:
+        aliases:
+          - ${APEX_DB_DOMAIN:?Set APEX_DB_DOMAIN in .env.production}
+      database-ingress:
+
+  migrations:
+    environment:
+      PGHOST: /var/run/postgresql
+      PGSSLMODE: disable
+    volumes:
+      - postgres_socket:/var/run/postgresql
+
+  preview-workspace:
+    environment:
+      PGHOST: /var/run/postgresql
+      PGSSLMODE: disable
+    volumes:
+      - postgres_socket:/var/run/postgresql
+
+  app:
+    environment:
+      APEX_DB_SSLMODE: require
+
+volumes:
+  postgres_tls:
+  postgres_socket:
+
+networks:
+  database-ingress:

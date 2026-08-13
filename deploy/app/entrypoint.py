@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 ALIAS_PATTERN = re.compile(r"^[a-z0-9]{8,24}$")
+SSL_MODES = {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
 
 
 def required(name: str) -> str:
@@ -38,11 +39,13 @@ def main() -> int:
         "password": required("APEX_PREVIEW_PASSWORD"),
         "workspace": f"ws_aida1145_{alias}",
     }
+    sslmode = os.environ.get("APEX_DB_SSLMODE", "").strip()
+    if sslmode and sslmode not in SSL_MODES:
+        raise ValueError("APEX_DB_SSLMODE is not a supported PostgreSQL SSL mode.")
     secrets_directory = Path("/app/.streamlit")
     secrets_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     secrets_path = secrets_directory / "secrets.toml"
-    secrets_text = "\n".join(
-        [
+    connection_lines = [
             "[connections.apex]",
             'dialect = "postgresql"',
             'driver = "psycopg"',
@@ -51,10 +54,25 @@ def main() -> int:
             f"database = {toml_string(values['database'])}",
             f"username = {toml_string(values['username'])}",
             f"password = {toml_string(values['password'])}",
+    ]
+    if sslmode:
+        connection_lines.extend(
+            [
+                "",
+                "[connections.apex.query]",
+                f"sslmode = {toml_string(sslmode)}",
+            ]
+        )
+    secrets_text = "\n".join(
+        connection_lines
+        + [
             "",
             "[connections.apex.create_engine_kwargs]",
             "pool_pre_ping = true",
             "pool_recycle = 1800",
+            "pool_size = 1",
+            "max_overflow = 0",
+            "pool_timeout = 10",
             "",
             "[apex]",
             f"workspace_schema = {toml_string(values['workspace'])}",
