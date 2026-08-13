@@ -166,3 +166,30 @@ def test_acme_overlay_is_profile_gated_and_certificate_export_is_atomic(repo_roo
     assert "--deploy-hook /usr/local/bin/certbot-export-db" in script
     assert 'chmod 0600 "$temporary_key"' in script
     assert 'mv -f "$temporary_key" "$certificate_export/privkey.pem"' in script
+
+
+def test_database_deployment_entrypoints_are_executable_in_git(repo_root: Path) -> None:
+    result = subprocess.run(
+        ["git", "ls-files", "--stage", "--", "deploy/database"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    modes = {
+        line.split(maxsplit=3)[3]: line.split(maxsplit=1)[0]
+        for line in result.stdout.splitlines()
+    }
+    executable_scripts = {
+        "deploy/database/certbot-db.sh",
+        "deploy/database/certbot-export-db",
+        "deploy/database/manage-db-certificate.sh",
+        "deploy/database/prepare-tls.sh",
+        "deploy/database/provision-preview.sh",
+        "deploy/database/refresh-db-tls.sh",
+        "deploy/database/run-migrations.sh",
+    }
+    assert {path: modes[path] for path in executable_scripts} == {
+        path: "100755" for path in executable_scripts
+    }
+    assert modes["deploy/database/pg_hba.remote.conf"] == "100644"
