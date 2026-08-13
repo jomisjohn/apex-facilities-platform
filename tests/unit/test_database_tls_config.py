@@ -193,3 +193,60 @@ def test_database_deployment_entrypoints_are_executable_in_git(repo_root: Path) 
         path: "100755" for path in executable_scripts
     }
     assert modes["deploy/database/pg_hba.remote.conf"] == "100644"
+
+
+def test_systemd_certificate_renewal_is_persistent_hardened_and_secret_free(
+    repo_root: Path,
+) -> None:
+    systemd = repo_root / "deploy/systemd"
+    service = (systemd / "apex-db-certificate-renew.service").read_text("utf-8")
+    timer = (systemd / "apex-db-certificate-renew.timer").read_text("utf-8")
+    installer = (systemd / "install-certificate-renewal.sh").read_text("utf-8")
+
+    assert "OnCalendar=daily" in timer
+    assert "Persistent=true" in timer
+    assert "RandomizedDelaySec=2h" in timer
+    assert "WantedBy=timers.target" in timer
+    assert "Unit=apex-db-certificate-renew.service" in timer
+
+    command = (
+        "ExecStart=/opt/apex-facilities-platform/deploy/database/"
+        "manage-db-certificate.sh renew /opt/apex-facilities-platform/.env.production"
+    )
+    assert command in service
+    assert "Type=oneshot" in service
+    assert "User=root" in service and "Group=root" in service
+    assert "UMask=0077" in service
+    assert "NoNewPrivileges=true" in service
+    assert "PrivateTmp=true" in service
+    assert "ProtectHome=true" in service
+    assert "Environment=" not in service
+    assert "EnvironmentFile=" not in service
+
+    assert "test -x \"$repository/deploy/database/manage-db-certificate.sh\"" in installer
+    assert "test -f \"$repository/.env.production\"" in installer
+    assert "install -o root -g root -m 0644" in installer
+    assert "systemctl enable --now apex-db-certificate-renew.timer" in installer
+    assert "systemctl start apex-db-certificate-renew.service" in installer
+
+    result = subprocess.run(
+        ["git", "ls-files", "--stage", "--", "deploy/systemd"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    modes = {
+        line.split(maxsplit=3)[3]: line.split(maxsplit=1)[0]
+        for line in result.stdout.splitlines()
+    }
+    assert modes == {
+        "deploy/systemd/apex-db-certificate-renew.service": "100644",
+        "deploy/systemd/apex-db-certificate-renew.timer": "100644",
+        "deploy/systemd/install-certificate-renewal.sh": "100755",
+    }
+
+    combined = service + timer + installer
+    assert "PRIVATE KEY" not in combined
+    assert "APEX_DB_ADMIN_PASSWORD=" not in combined
+    assert "APEX_PREVIEW_PASSWORD=" not in combined

@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily Apex PostgreSQL TLS certificate renewal check
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=2h
+AccuracySec=5m
+Unit=apex-db-certificate-renew.service
+
+[Install]
+WantedBy=timers.target

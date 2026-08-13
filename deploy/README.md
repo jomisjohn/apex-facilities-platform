@@ -72,6 +72,16 @@ docker compose --env-file .env.production \
 
 Schedule `deploy/database/manage-db-certificate.sh renew .env.production` daily with the VPS scheduler or a systemd timer. Certbot's successful-renewal deploy hook exports a replacement only after renewal. The wrapper then revalidates and atomically refreshes the PostgreSQL TLS volume, sends PostgreSQL `SIGHUP`, and confirms readiness. A no-renewal run safely revalidates and reloads the current material. Do not scrape Caddy's storage: Caddy manages web certificates, while Certbot manages the separate PostgreSQL lineage. PostgreSQL 17 rereads its certificate and key during reload; an invalid replacement is rejected while the previous working TLS configuration remains active.
 
+For the standard production checkout at `/opt/apex-facilities-platform`, install the included persistent daily systemd timer after the renewal dry run and reload rehearsal pass:
+
+```sh
+deploy/systemd/install-certificate-renewal.sh
+systemctl status --no-pager apex-db-certificate-renew.timer
+systemctl list-timers --all apex-db-certificate-renew.timer
+```
+
+The installer immediately runs one renewal/reload check and fails if that service fails. Subsequent runs are recorded in the system journal; inspect `journalctl -u apex-db-certificate-renew.service` during routine operations and after any monitoring alert. A different repository location requires reviewed unit paths rather than an undocumented symlink or copied script.
+
 Before scheduling it, rehearse Certbot renewal using the CA staging/dry-run pathway and the complete PostgreSQL reload test. Monitor scheduler failures and certificate expiry; unmonitored automation does not satisfy the release gate.
 
 Do not change `APEX_DB_BIND_ADDRESS` from `127.0.0.1` or open a firewall port during this preparation phase. Internet release requires all of the following evidence:
