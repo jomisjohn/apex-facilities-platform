@@ -11,7 +11,9 @@ Push-Location $repository
 try {
     & $docker compose up -d database
     if ($LASTEXITCODE -ne 0) { throw 'The Apex database container did not start.' }
+    & (Join-Path $PSScriptRoot 'apply_migrations.ps1')
     & (Join-Path $PSScriptRoot 'validate_database.ps1')
+    & (Join-Path $PSScriptRoot 'validate_data.ps1')
 } finally {
     Pop-Location
 }

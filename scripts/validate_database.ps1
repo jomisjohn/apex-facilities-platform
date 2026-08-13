@@ -22,11 +22,16 @@ if ($tcpAuth -ne '1') { throw 'Password-authenticated TCP connection failed.' }
 $serverVersion = (& $docker exec $container psql -U $adminUser -d $database -Atc 'SHOW server_version;').Trim()
 $postgisVersion = (& $docker exec $container psql -U $adminUser -d $database -Atc "SELECT extversion FROM pg_extension WHERE extname='postgis';").Trim()
 $schemaCount = [int](& $docker exec $container psql -U $adminUser -d $database -Atc "SELECT count(*) FROM information_schema.schemata WHERE schema_name LIKE 'shared_%';")
+$tableCount = [int](& $docker exec $container psql -U $adminUser -d $database -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema LIKE 'shared_%' AND table_type = 'BASE TABLE';")
 $roleCount = [int](& $docker exec $container psql -U $adminUser -d $database -Atc "SELECT count(*) FROM pg_roles WHERE rolname IN ('apex_shared_reader','apex_workspace_member') AND NOT rolcanlogin;")
 if ($schemaCount -ne 12) { throw "Expected 12 shared schemas; found $schemaCount." }
+if ($tableCount -ne 34) { throw "Expected 34 shared base tables; found $tableCount." }
 if ($roleCount -ne 2) { throw "Expected two NOLOGIN roles; found $roleCount." }
+if ((& $docker exec $container psql -U $adminUser -d $database -Atc "SELECT has_schema_privilege('public', 'public', 'CREATE');").Trim() -ne 'f') {
+    throw 'PUBLIC unexpectedly has CREATE permission on the public schema.'
+}
 
-& $docker exec $container psql -U $adminUser -d $database -v ON_ERROR_STOP=1 -c 'DROP TABLE IF EXISTS shared_facilities.permission_validation;' | Out-Null
+& $docker exec $container psql -U $adminUser -d $database -v ON_ERROR_STOP=1 -q -c 'SET client_min_messages TO warning; DROP TABLE IF EXISTS shared_facilities.permission_validation;' | Out-Null
 & $docker exec $container psql -U $adminUser -d $database -v ON_ERROR_STOP=1 -c "CREATE TABLE shared_facilities.permission_validation (validation_id integer PRIMARY KEY, validation_text text NOT NULL); INSERT INTO shared_facilities.permission_validation VALUES (1,'reader-select-ok');" | Out-Null
 $readerValue = (& $docker exec $container psql -U $adminUser -d $database -Atc "SET ROLE apex_shared_reader; SELECT validation_text FROM shared_facilities.permission_validation WHERE validation_id=1;") -join "`n"
 if ($readerValue -notmatch 'reader-select-ok') { throw 'Shared reader could not select shared data.' }
@@ -42,4 +47,4 @@ if ($insertExitCode -eq 0) { throw 'Shared reader unexpectedly inserted into sha
 if ($createExitCode -eq 0) { throw 'Shared reader unexpectedly created a shared table.' }
 
 & $docker exec $container psql -U $adminUser -d $database -c 'DROP TABLE shared_facilities.permission_validation;' | Out-Null
-Write-Host "PASS: PostgreSQL $serverVersion; PostGIS $postgisVersion; TCP password authentication; 12 schemas; group roles present; shared reader is read-only."
+Write-Host "PASS: PostgreSQL $serverVersion; PostGIS $postgisVersion; TCP password authentication; 12 schemas; 34 tables; group roles present; shared reader is read-only."
