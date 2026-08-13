@@ -1,0 +1,26 @@
+name: apex-facilities
+
+services:
+  database:
+    image: postgis/postgis:17-3.5
+    container_name: apex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${APEX_DB_NAME:-apex_facilities}
+      POSTGRES_USER: ${APEX_DB_ADMIN_USER:-apex_admin}
+      POSTGRES_PASSWORD: ${APEX_DB_ADMIN_PASSWORD:?Set APEX_DB_ADMIN_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${APEX_DB_PORT:-5432}:5432"
+    volumes:
+      - apex_postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  apex_postgres_data:
+
