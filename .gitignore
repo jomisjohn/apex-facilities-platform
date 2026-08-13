@@ -1,4 +1,10 @@
 .env
+.streamlit/secrets.toml
+**/.streamlit/secrets.toml
+*.pem
+*.key
+*.p12
+*.pfx
 .venv/
 __pycache__/
 *.py[cod]
