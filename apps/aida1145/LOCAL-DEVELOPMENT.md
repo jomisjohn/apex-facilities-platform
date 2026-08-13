@@ -53,7 +53,7 @@ Open the local address shown in the terminal, normally `http://localhost:8501`. 
 
 ## 5. Connect DBeaver Community
 
-Create a PostgreSQL connection with the same assigned hostname, port, database, username and password used by your local app. In DBeaver's SSL settings, use **verify-full** and the trusted root CA file when required. Test the connection before saving it.
+Create a PostgreSQL connection with the same assigned hostname, port, database, username and password used by your local app. In DBeaver's SSL settings, use **verify-full**. If a trusted root file is requested, download the official [ISRG Root X1 PEM from Let's Encrypt](https://letsencrypt.org/certs/isrgrootx1.pem), save it as `isrgrootx1.pem`, and select that file. Test the connection before saving it. Never switch to `require` or accept an untrusted certificate to bypass a certificate error.
 
 DBeaver and local Streamlit use the same PostgreSQL workspace. A committed database change made in one tool becomes visible in the other after the query or page is refreshed. DBeaver Community is sufficient; no paid edition is required.
 
@@ -93,4 +93,3 @@ git commit -m "Complete AIDA 1145 Lab 01 feature"
 ```
 
 Push only to the personal or course remote specified by your instructor. Confirm that `.streamlit/secrets.toml`, data exports, personal information and credentials are absent from `git status` before every commit. D2L remains the official submission location unless the lab instructions explicitly state otherwise.
-

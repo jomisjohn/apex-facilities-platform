@@ -91,7 +91,7 @@ Do not change `APEX_DB_BIND_ADDRESS` from `127.0.0.1` or open a firewall port du
 3. A non-TLS connection is rejected.
 4. The administrator login is rejected over TCP.
 5. A provisioned student login succeeds with `sslmode=verify-full` and a trusted CA root.
-6. DBeaver Community and Python are tested from the campus network and a separate external network.
+6. DBeaver Community and Python are tested externally with `verify-full`; college-network availability is checked operationally without weakening TLS if that network blocks the database port.
 7. Certificate renewal and PostgreSQL reload are rehearsed without losing existing connections.
 8. Class-wide simultaneous-login and representative query load tests establish measured per-student connection limits, bounded application pool settings, administrator connection reserve/capacity, and VPS resource headroom. Do not guess these thresholds.
 9. Docker-aware host firewall and connection-rate controls are implemented and tested against the actual published container port; a host firewall rule that Docker bypasses does not satisfy this gate.
@@ -113,7 +113,7 @@ The installer requires root, an active Docker service, and Docker's existing `DO
 
 ### Required remote client settings
 
-For DBeaver Community, create a PostgreSQL connection using the assigned database hostname, port, database, non-admin username and password. In the SSL settings, select **verify-full** and provide the trusted root CA file when the workstation does not already trust the issuing CA. The connection must use the hostname, not a raw IP address. Never accept an untrusted certificate or use `require` as a substitute for hostname verification.
+For DBeaver Community, create a PostgreSQL connection using the assigned database hostname, port, database, non-admin username and password. In the SSL settings, select **verify-full** and provide the official [ISRG Root X1 PEM from Let's Encrypt](https://letsencrypt.org/certs/isrgrootx1.pem) when a root CA file is required. The connection must use the hostname, not a raw IP address. Never accept an untrusted certificate or use `require` as a substitute for hostname verification.
 
 For Python with psycopg, use separate secret values and require hostname verification:
 
