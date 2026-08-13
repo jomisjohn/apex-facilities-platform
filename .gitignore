@@ -1,4 +1,5 @@
 .env
+.env.production
 .streamlit/secrets.toml
 **/.streamlit/secrets.toml
 *.pem
