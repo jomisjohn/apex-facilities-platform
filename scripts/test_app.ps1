@@ -12,7 +12,7 @@ try {
     & $python -m ruff check apps tests
     if ($LASTEXITCODE -ne 0) { throw 'Ruff validation failed.' }
 
-    & $python -m pytest -m 'not database' -q
+    & $python -m pytest -m 'not database and not fallback' -q
     if ($LASTEXITCODE -ne 0) { throw 'Local application tests failed.' }
 
     if ($env:APEX_TEST_DATABASE_URL) {
@@ -21,6 +21,14 @@ try {
     }
     else {
         Write-Host 'SKIP: database integration requires APEX_TEST_DATABASE_URL for a non-admin student login.'
+    }
+
+    if ($env:APEX_RUN_FALLBACK_TESTS -eq '1') {
+        & $python -m pytest -m fallback -q
+        if ($LASTEXITCODE -ne 0) { throw 'Fallback export tests failed.' }
+    }
+    else {
+        Write-Host 'SKIP: fallback validation requires APEX_RUN_FALLBACK_TESTS=1 and local database settings.'
     }
 }
 finally {

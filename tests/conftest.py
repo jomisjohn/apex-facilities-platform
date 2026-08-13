@@ -11,11 +11,11 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def app_root() -> Path:
     return APP_ROOT
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def repo_root() -> Path:
     return REPO_ROOT
