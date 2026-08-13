@@ -1,14 +1,16 @@
-# Architecture decisions
+# How the Apex data platform works
 
-## Stable platform boundary
+You will use one connected facilities database instead of unrelated data files for every lab. This helps you practise how professional applications combine information from several parts of an organization.
+
+## Your database access
 
 - One PostgreSQL/PostGIS database: `apex_facilities`.
 - Twelve connected shared domain schemas.
-- Shared domain data is read-only for students.
-- One PostgreSQL login per student.
-- One writable workspace schema per student/course enrollment.
-- Separate course applications may share the design system and database, but course outcomes, assessments and student work remain isolated.
-- Approximately 60 lab-ready data packages may be added over time; they are not 60 separate databases or necessarily 60 external datasets.
+- You can query shared domain data but cannot change it.
+- You receive one PostgreSQL login.
+- Each course enrollment gives you a separate writable workspace schema.
+- Your course applications and assessed work remain separated by course.
+- Lab packages may reuse connected data, so you can study how your earlier work supports later tasks.
 
 ## Data domains
 
@@ -25,11 +27,10 @@
 11. GIS and territories
 12. Research and market analytics
 
-## Data governance
+## How your data is protected
 
-- Core enterprise records are synthetic and relationally consistent.
-- Every external dataset requires recorded provenance, licence, version, attribution, permitted uses, and quality/bias notes.
-- Raw student imports remain in course-scoped workspace schemas.
-- Only instructor-reviewed datasets become shared packages.
-- No student information, submissions, grades, or confidential external data is stored in shared schemas.
-
+- Apex enterprise records are synthetic and designed to work together.
+- Open datasets include their source, licence, version, attribution and quality notes.
+- Data you import stays in your course workspace unless your instructor explicitly approves another location.
+- Shared packages are reviewed before you use them.
+- Shared schemas do not store your personal information, submissions, grades or feedback.

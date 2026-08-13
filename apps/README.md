@@ -1,4 +1,3 @@
-# Course applications
+# Your course applications
 
-Course-specific Streamlit applications will be added here only after the shared database foundation is validated. Each application must retain its own outcomes, labs, final-project template and configuration.
-
+Your course will provide its own Streamlit application folder, lab pages and final-project template here. Follow only the instructions for the course in which you are enrolled. Do not copy assessed work, data or configuration between courses unless your instructor explicitly permits it.
