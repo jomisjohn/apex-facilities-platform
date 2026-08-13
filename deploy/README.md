@@ -96,6 +96,21 @@ Do not change `APEX_DB_BIND_ADDRESS` from `127.0.0.1` or open a firewall port du
 8. Class-wide simultaneous-login and representative query load tests establish measured per-student connection limits, bounded application pool settings, administrator connection reserve/capacity, and VPS resource headroom. Do not guess these thresholds.
 9. Docker-aware host firewall and connection-rate controls are implemented and tested against the actual published container port; a host firewall rule that Docker bypasses does not satisfy this gate.
 
+### Docker-aware PostgreSQL ingress guard
+
+The included guard operates in Docker's `DOCKER-USER` chain and does not change the database bind address or publish PostgreSQL. It sends only TCP destination port 5432 to a dedicated `APEX-POSTGRES-INGRESS` chain, accepts established connections, allows a measured global rate of 150 new connections per second with burst 180, and drops excess new connections. All non-PostgreSQL Docker traffic returns to Docker's existing policy unchanged.
+
+On the standard production checkout, install it while PostgreSQL is still bound to `127.0.0.1`:
+
+```sh
+deploy/firewall/install-postgres-ingress.sh
+systemctl status --no-pager apex-postgres-ingress.service
+iptables --wait --list APEX-POSTGRES-INGRESS --numeric --verbose
+iptables --wait --list DOCKER-USER --numeric --verbose
+```
+
+The installer requires root, an active Docker service, and Docker's existing `DOCKER-USER` chain. It fails if the complete managed jump and fail-closed drop cannot be verified. The systemd service reapplies the idempotent rules after Docker starts. These rules are a release prerequisite, not authorization to change `APEX_DB_BIND_ADDRESS`; keep the loopback bind until the remaining VPS, monitoring, campus, and external-network gates pass.
+
 ### Required remote client settings
 
 For DBeaver Community, create a PostgreSQL connection using the assigned database hostname, port, database, non-admin username and password. In the SSL settings, select **verify-full** and provide the trusted root CA file when the workstation does not already trust the issuing CA. The connection must use the hostname, not a raw IP address. Never accept an untrusted certificate or use `require` as a substitute for hostname verification.

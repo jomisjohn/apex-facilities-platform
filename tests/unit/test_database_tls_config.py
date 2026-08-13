@@ -240,11 +240,12 @@ def test_systemd_certificate_renewal_is_persistent_hardened_and_secret_free(
         line.split(maxsplit=3)[3]: line.split(maxsplit=1)[0]
         for line in result.stdout.splitlines()
     }
-    assert modes == {
+    expected_modes = {
         "deploy/systemd/apex-db-certificate-renew.service": "100644",
         "deploy/systemd/apex-db-certificate-renew.timer": "100644",
         "deploy/systemd/install-certificate-renewal.sh": "100755",
     }
+    assert {path: modes[path] for path in expected_modes} == expected_modes
 
     combined = service + timer + installer
     assert "PRIVATE KEY" not in combined

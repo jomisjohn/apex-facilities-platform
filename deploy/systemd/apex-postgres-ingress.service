@@ -1,0 +1,22 @@
+[Unit]
+Description=Apply the Apex PostgreSQL Docker ingress guard
+Documentation=https://github.com/jomisjohn/apex-facilities-platform
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/opt/apex-facilities-platform/deploy/firewall/apply-postgres-ingress.sh
+RemainAfterExit=yes
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+CapabilityBoundingSet=CAP_NET_ADMIN
+
+[Install]
+WantedBy=docker.service
